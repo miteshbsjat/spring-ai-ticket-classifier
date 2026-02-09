@@ -1,27 +1,13 @@
 # AI Ticket Classifier (Spring AI + Ollama)
 
-A Spring Boot microservice that leverages **Llama 3.1** via **Ollama** to automatically classify support tickets into structured categories. It uses Spring AI's `ChatClient` with structured output conversion to ensure every response is a valid JSON object.
+A Spring Boot microservice that leverages **Llama 3.1** via **Ollama** to automatically classify support tickets into structured categories and priority levels.
 
 ## 🚀 Features
 
 * **Local LLM Integration**: Uses Ollama for privacy and cost-efficiency.
-* **Structured Output**: Automatically maps LLM text to a Java `Record` (JSON).
-* **Smart Classification**: Detects `BILLING`, `TECHNICAL`, and `GENERAL` issues based on natural language context.
-* **Modern Stack**: Built with Spring Boot 3.4+, Spring AI (Milestone 5), and Gradle.
-
----
-
-## 🛠️ Prerequisites
-
-1. **Ollama Installed**: [Download Ollama](https://ollama.com/)
-2. **Model Downloaded**:
-```bash
-ollama pull llama3.1:latest
-
-```
-
-
-3. **Java 17+**
+* **Structured Output**: Automatically maps LLM responses to a Java `Record`.
+* **Smart Classification**: Detects `BILLING`, `TECHNICAL`, or `GENERAL` categories.
+* **Intelligent Prioritization**: Assigns `HIGH`, `MEDIUM`, or `LOW` priority based on sentiment and urgency (e.g., money loss or service failure).
 
 ---
 
@@ -32,7 +18,7 @@ ticket-classifier/
 ├── src/main/java/com/example/ticket_classifier/
 │   ├── controller/   # REST Endpoints
 │   ├── service/      # LLM logic via ChatClient
-│   └── model/        # Structured Records (POJOs)
+│   └── model/        # Structured Records (Category & Priority Enums)
 └── src/main/resources/
     └── application.yml # Ollama & Model config
 
@@ -54,16 +40,30 @@ spring:
       chat:
         options:
           model: llama3.1:latest
-          temperature: 0.1 # Low temperature for consistent classification
+          temperature: 0.1
 
+```
+
+## 🛠️ Build & Compilation
+
+Since this is a Gradle-based project, you use the Gradle Wrapper (`gradlew`) to handle compilation and packaging. This ensures everyone uses the same Gradle version without needing to install it manually.
+
+* Full Build (Compile + Test + Package)
+
+To run a full build cycle. This will generate an executable JAR file in `build/libs/`.
+
+```bash
+./gradlew clean build -x test
 ```
 
 ---
 
-## 🏃 Running the Application
 
-Build and run the service using the Gradle wrapper:
+---
+## 🏃 How to Run
 
+1. **Start Ollama**: Ensure `ollama run llama3.1:latest` is working.
+2. **Build & Run**:
 ```bash
 ./gradlew bootRun
 
@@ -73,14 +73,16 @@ Build and run the service using the Gradle wrapper:
 
 ## 🧪 API Usage & Examples
 
-The service exposes a single POST endpoint: `http://localhost:8080/classify`
+The service exposes a POST endpoint: `http://localhost:8080/classify`
 
-### 1. Billing Issue
+### 1. High Priority (Urgent Technical/Billing)
+
+**Request:**
 
 ```bash
-curl -X POST http://localhost:8080/classify \
+curl -s -X POST http://localhost:8080/classify \
 -H "Content-Type: application/json" \
--d '{"text": "Customer charged twice on credit card"}'
+-d '{"text": "URGENT: Cannot log in and my account shows zero balance!"}' | jq
 
 ```
 
@@ -89,17 +91,20 @@ curl -X POST http://localhost:8080/classify \
 ```json
 {
   "category": "BILLING",
-  "reasoning": "Duplicate charge on customer's credit card"
+  "priority": "HIGH",
+  "reasoning": "User is angry and mentions money loss"
 }
 
 ```
 
-### 2. Technical Issue
+### 2. Standard Technical Issue
+
+**Request:**
 
 ```bash
-curl -X POST http://localhost:8080/classify \
+curl -s -X POST http://localhost:8080/classify \
 -H "Content-Type: application/json" \
--d '{"text": "OTP is not received for initiating the transaction"}'
+-d '{"text": "OTP is not received for initiating the transaction"}' | jq
 
 ```
 
@@ -108,17 +113,20 @@ curl -X POST http://localhost:8080/classify \
 ```json
 {
   "category": "TECHNICAL",
-  "reasoning": "The issue is related to the transaction initiation process, which falls under technical support."
+  "priority": "MEDIUM",
+  "reasoning": "The issue is related to the transaction initiation process."
 }
 
 ```
 
-### 3. General Query
+### 3. General Query (Low Priority)
+
+**Request:**
 
 ```bash
-curl -X POST http://localhost:8080/classify \
+curl -s -X POST http://localhost:8080/classify \
 -H "Content-Type: application/json" \
--d '{"text": "C is better than C++"}'
+-d '{"text": "C is better than C++"}' | jq
 
 ```
 
@@ -127,14 +135,9 @@ curl -X POST http://localhost:8080/classify \
 ```json
 {
   "category": "GENERAL",
-  "reasoning": "The statement is subjective and does not relate to a specific issue or problem."
+  "priority": "LOW",
+  "reasoning": "The statement is subjective and does not relate to a specific problem."
 }
 
 ```
-
 ---
-
-## 🔧 Troubleshooting
-
-* **Dependency Issues**: Ensure the Spring Milestone repository is added to `build.gradle` as Spring AI is not yet on Maven Central.
-* **Timeouts**: If the LLM takes too long to respond on the first request, increase the client timeout in `application.yml`.
