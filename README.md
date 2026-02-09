@@ -1,6 +1,6 @@
 # AI Ticket Classifier (Spring AI + Ollama)
 
-A Spring Boot microservice that leverages **Llama 3.1** via **Ollama** to automatically classify support tickets into structured categories and priority levels.
+A Spring Boot microservice that leverages **Llama 3.1** via **Ollama** to automatically classify support tickets into structured categories and priority levels. It uses Spring AI's `ChatClient` with structured output conversion to ensure every response is a valid JSON object.
 
 ## 🚀 Features
 
