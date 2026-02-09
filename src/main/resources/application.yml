@@ -1,0 +1,8 @@
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: llama3.1:latest
+          temperature: 0.1 # Lower temperature is better for classification tasks
